@@ -116,6 +116,7 @@ public class StringParser {
          */
 
         handleMethod(lines[0]);
+//        System.out.println(Arrays.toString(lines));
         handleProtocol(lines[2]);
         /**
          * 关键是下面，对于url的处理

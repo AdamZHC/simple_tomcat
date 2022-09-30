@@ -2,6 +2,7 @@ package com.hit.adam.tomcat;
 
 
 import com.hit.adam.tomcat.connector.Connector;
+import com.hit.adam.tomcat.connector.impl.BioHttpConnector;
 import com.hit.adam.tomcat.connector.impl.NioHttpConnector;
 import com.hit.adam.tomcat.http.HttpRequest;
 import com.hit.adam.tomcat.http.HttpResponse;

@@ -45,7 +45,6 @@ public class NioHttpProcessor implements Processor {
                 new StaticResourceProcessor().process(request, response);
             }
             //需要把数据写回才能回收这个key
-            selectionKey.cancel();
             sc.close();
         } catch (IOException e) {
             e.printStackTrace();

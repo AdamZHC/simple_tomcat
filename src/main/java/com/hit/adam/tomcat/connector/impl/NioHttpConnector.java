@@ -1,15 +1,17 @@
 package com.hit.adam.tomcat.connector.impl;
 
 import com.hit.adam.tomcat.connector.Connector;
+import com.hit.adam.tomcat.connector.threadpool.SimpleThreadPoolExecutor;
 import com.hit.adam.tomcat.processor.impl.NioHttpProcessor;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 @SuppressWarnings("All")
 public class NioHttpConnector implements Connector {
@@ -26,7 +28,7 @@ public class NioHttpConnector implements Connector {
     /**
      * map待使用，添加后续功能
      */
-    private Map<String, Channel> map;
+    private Executor executor;
 
     public void start() {
         new Thread(this).start();
@@ -34,7 +36,8 @@ public class NioHttpConnector implements Connector {
 
     @Override
     public void initialize() {
-        map = new ConcurrentHashMap<>();
+        executor = Executors.newFixedThreadPool(20);
+//        executor = new SimpleThreadPoolExecutor(10, 30,20, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(15));
     }
 
     @Override
@@ -54,7 +57,8 @@ public class NioHttpConnector implements Connector {
              */
             ssc.register(selector, SelectionKey.OP_ACCEPT);
             while (true) {
-                if (selector.select(TIMEOUT) == 0) {
+
+                if (selector.selectNow() == 0) {
                     continue;
                 }
                 /**
@@ -63,8 +67,13 @@ public class NioHttpConnector implements Connector {
                  * 但是实际上也会由于就绪还能获取到
                  */
                 Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+                /**
+                 * 有线程的问题，要直接把他移除掉
+                 */
                 while (iter.hasNext()) {
+
                     SelectionKey key = iter.next();
+
                     /**
                      * 这里就是不断获取socket并且注册给多路复用器selector
                      * 最后再处理后续的读还有写的问题
@@ -77,10 +86,18 @@ public class NioHttpConnector implements Connector {
                          * 并且key里面有所有的参数
                          */
                         handleAccept(key);
-                    } else if (key.isReadable()) {
+                        iter.remove();
+                    } else if (key.isReadable() && key.isValid()) {
                         handleRead(key);
+                        /**
+                         * 这里key直接remove
+                         * 那边的key直接处理，其实是不会扔掉的
+                         * 只不过是在这里直接扔到canceled-pool中
+                         * 然后下一次不会把他搜出来
+                         */
+                        key.cancel();
+                        iter.remove();
                     }
-                    iter.remove();
                 }
             }
         } catch (IOException e) {
@@ -105,11 +122,11 @@ public class NioHttpConnector implements Connector {
         ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
         SocketChannel sc = ssChannel.accept();
         sc.configureBlocking(false);
-        sc.register(key.selector(), SelectionKey.OP_READ, ByteBuffer.allocateDirect(BUF_SIZE));
+        sc.register(key.selector(), SelectionKey.OP_READ | SelectionKey.OP_WRITE, ByteBuffer.allocateDirect(BUF_SIZE));
     }
 
     public void handleRead(SelectionKey key) throws IOException {
-        new NioHttpProcessor(this, key).run();
+        executor.execute(new NioHttpProcessor(this, key));
     }
 
 }
