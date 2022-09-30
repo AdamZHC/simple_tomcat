@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" build-on-make="true" name="web">
+    <output-path>$PROJECT_DIR$/out/artifacts/web</output-path>
+    <root id="root">
+      <element id="library" level="project" name="Maven: javax.servlet:javax.servlet-api:3.0.1" />
+    </root>
+  </artifact>
+</component>
