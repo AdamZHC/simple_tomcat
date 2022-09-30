@@ -66,6 +66,20 @@
 
 然后创建线程执行`run`方法，保证不断监听`accpet`获取已建立的套接字，创建`processor`，分配套接字，获取`processor`的方式，要么是通过获取已经回收的阻塞队列中的，要么就是直接创建，直接创建也参考线程池的做法，创建当前线程的时候就会分配资源开启线程
 
+##### 聚合报告：
+
+![avatar](./images/image-20220928224750282.png)
+
+![avatar](./images/image-20220928224939627.png)
+
+##### 汇总报告：
+
+![avatar](./images/image-20220928224800762.png)
+
+![avatar](./images/image-20220928224925824.png)
+
+### 
+
 ### `NIO`实现
 
 基本上通过重新封装`connector`, `processor`实现对应的功能，主要是熟悉`nio`面向`channel`和`buffer`的流程，然后把`select`的流程加入到`web server`中
